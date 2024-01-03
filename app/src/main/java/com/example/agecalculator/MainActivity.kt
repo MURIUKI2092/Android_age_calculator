@@ -7,7 +7,9 @@ import android.widget.Button
 import android.widget.DatePicker
 import android.widget.TextView
 import android.widget.Toast
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
@@ -23,34 +25,36 @@ class MainActivity : AppCompatActivity() {
 
     }
     private val calendar = Calendar.getInstance()
+    // set it as a nullable here
+    private var selectedDate :TextView? = null
+    private var dateInMillis: TextView? = null
 
     private fun showDatePickerDialog(){
 
-        val selectedDate= findViewById<TextView>(R.id.dateStr)
-        val dateInMillis = findViewById<TextView>(R.id.dateMin)
+        selectedDate= findViewById<TextView>(R.id.dateStr)
+        dateInMillis = findViewById<TextView>(R.id.dateMin)
         val datePickerDialog = DatePickerDialog(this,DatePickerDialog.OnDateSetListener { view:DatePicker,year: Int,month: Int,day: Int ->
             val theDate = "$day/${month+1}/$year"
-            selectedDate.text = theDate
+            selectedDate?.text=theDate
+            // the standard formatter
+            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH)
+            val dateParsed = sdf.parse(theDate)
+            dateParsed?.let {
+                val currentDate = sdf.parse((sdf.format(System.currentTimeMillis())))
+                currentDate?.let {
+                    val currentDateInMin = currentDate.time / 60000
+                    val inMillis = dateParsed.time / 60000
+                    dateInMillis?.text = "${currentDateInMin - inMillis}"
+                }
+            }
 
-            val inMillis= calculateTimeDifference(day, month, year)
-            dateInMillis.text="$inMillis"
         },calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH))
+        // only show those in the past
+        datePickerDialog.datePicker.maxDate = System.currentTimeMillis()-86400000
         // Show the date picker dialog
         datePickerDialog.show()
-
-
-    }
-    private fun calculateTimeDifference(day: Int, month: Int, year: Int): Long {
-        val currentDate = Calendar.getInstance()
-        val selectedDate = Calendar.getInstance()
-        // month in a calendar is usually 0-based
-        selectedDate.set(year, month - 1, day)
-
-        //calculate the time difference in milliseconds
-        val timeDiffInMillis = abs(currentDate.timeInMillis - selectedDate.timeInMillis)
-        return timeDiffInMillis / 60000L
 
 
     }
